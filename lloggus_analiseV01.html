@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLOGGUS — Análise do Plano de Negócio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg:       #0e0f11;
+  --bg2:      #161719;
+  --bg3:      #1d1f22;
+  --bg4:      #242629;
+  --border:   rgba(255,255,255,.08);
+  --border2:  rgba(255,255,255,.14);
+  --text:     #e8e6e0;
+  --muted:    #8a8880;
+  --faint:    #4a4845;
+  --accent:   #b5e48c;
+  --accent2:  #52b788;
+  --amber:    #f4a261;
+  --red:      #e76f51;
+  --blue:     #74c0fc;
+  --serif:    'Playfair Display', Georgia, serif;
+  --sans:     'DM Sans', sans-serif;
+  --mono:     'DM Mono', monospace;
+  --r:        10px;
+  --r-lg:     16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration: none; }
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(14,15,17,.88);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2rem; height: 54px;
+}
+.nav-brand {
+  font-family: var(--mono); font-size: 13px; font-weight: 500;
+  color: var(--accent); letter-spacing: .04em;
+}
+.nav-links {
+  display: flex; gap: 0; list-style: none;
+}
+.nav-links li a {
+  display: block; padding: 0 14px; height: 54px; line-height: 54px;
+  font-size: 12px; font-weight: 500; letter-spacing: .04em;
+  color: var(--muted); transition: color .2s;
+  text-transform: uppercase;
+}
+.nav-links li a:hover { color: var(--text); }
+.nav-links li a.active { color: var(--accent); }
+.nav-badge {
+  font-family: var(--mono); font-size: 11px;
+  background: rgba(181,228,140,.12); color: var(--accent);
+  border: 1px solid rgba(181,228,140,.25); border-radius: 20px;
+  padding: 3px 10px;
+}
+
+/* ── LAYOUT ── */
+main { padding-top: 54px; }
+section {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  padding: 5rem 2rem;
+}
+.container { max-width: 1000px; width: 100%; margin: 0 auto; }
+.container-wide { max-width: 1120px; width: 100%; margin: 0 auto; }
+
+/* ── HERO ── */
+#hero {
+  background: var(--bg);
+  position: relative; overflow: hidden;
+}
+.hero-grid {
+  display: grid; gap: .5rem;
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+}
+.hero-content {
+  position: relative; z-index: 2; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+}
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  letter-spacing: .15em; text-transform: uppercase;
+  color: var(--accent2); display: flex; align-items: center; gap: 8px;
+}
+.hero-eyebrow::before, .hero-eyebrow::after {
+  content: ''; display: block; height: 1px; width: 40px; background: var(--accent2);
+}
+.hero-title {
+  font-family: var(--serif); font-size: clamp(40px, 7vw, 72px);
+  font-weight: 700; line-height: 1.1; letter-spacing: -.02em;
+  color: var(--text);
+}
+.hero-title em { font-style: italic; color: var(--accent); }
+.hero-sub {
+  font-size: 15px; color: var(--muted); max-width: 540px; line-height: 1.7;
+}
+.hero-chips {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+}
+.chip {
+  font-size: 12px; font-weight: 500; padding: 5px 13px; border-radius: 20px;
+  border: 1px solid; letter-spacing: .02em;
+}
+.chip-g { background: rgba(82,183,136,.1); color: #52b788; border-color: rgba(82,183,136,.25); }
+.chip-a { background: rgba(244,162,97,.1);  color: #f4a261; border-color: rgba(244,162,97,.25); }
+.chip-b { background: rgba(116,192,252,.1); color: #74c0fc; border-color: rgba(116,192,252,.25); }
+.hero-score {
+  display: flex; align-items: center; gap: 20px;
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--r-lg); padding: 1.25rem 2rem;
+}
+.score-ring { position: relative; width: 80px; height: 80px; }
+.score-ring svg { transform: rotate(-90deg); }
+.score-num {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.score-num .n { font-family: var(--serif); font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1; }
+.score-num .d { font-size: 10px; color: var(--muted); font-family: var(--mono); }
+.score-info h2 { font-family: var(--serif); font-size: 20px; font-weight: 500; color: var(--accent); margin-bottom: 4px; }
+.score-info p { font-size: 13px; color: var(--muted); max-width: 340px; line-height: 1.6; }
+.hero-scroll {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  font-size: 11px; font-family: var(--mono); color: var(--faint); letter-spacing: .1em;
+  animation: bounce 2s ease-in-out infinite;
+}
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
+
+/* ── SEC HEADER ── */
+.sec-header { margin-bottom: 3rem; }
+.sec-tag {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--accent2);
+  margin-bottom: .6rem; display: flex; align-items: center; gap: 8px;
+}
+.sec-tag::before { content:''; display:block; height:1px; width:24px; background:var(--accent2); }
+.sec-title {
+  font-family: var(--serif); font-size: clamp(28px, 4vw, 42px);
+  font-weight: 700; line-height: 1.15; letter-spacing: -.02em; color: var(--text);
+}
+.sec-title em { font-style: italic; color: var(--accent); }
+.sec-desc { font-size: 14px; color: var(--muted); margin-top: .6rem; max-width: 540px; line-height: 1.7; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 1.25rem 1.5rem;
+}
+.card-sm {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 1rem 1.1rem;
+}
+.card-accent {
+  background: rgba(82,183,136,.06); border: 1px solid rgba(82,183,136,.2);
+  border-radius: var(--r-lg); padding: 1.25rem 1.5rem;
+}
+
+/* ── DIMENSÕES ── */
+.dims { display: flex; flex-direction: column; gap: 10px; }
+.dim-row { display: flex; align-items: center; gap: 14px; }
+.dim-label { width: 180px; font-size: 13px; color: var(--muted); flex-shrink: 0; }
+.dim-track { flex: 1; height: 4px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+.dim-fill { height: 100%; border-radius: 2px; transition: width 1s cubic-bezier(.4,0,.2,1); }
+.dim-val { width: 32px; text-align: right; font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--text); }
+
+/* ── KPI GRID ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
+.kpi { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 1rem 1.1rem; }
+.kpi .k-lbl { font-size: 11px; color: var(--muted); margin-bottom: 5px; line-height: 1.4; letter-spacing: .02em; }
+.kpi .k-val { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.1; }
+.kpi .k-note { font-size: 11px; color: var(--faint); margin-top: 4px; font-family: var(--mono); }
+.kpi.hi { background: rgba(82,183,136,.07); border-color: rgba(82,183,136,.2); }
+.kpi.hi .k-lbl { color: #52b788; }
+.kpi.hi .k-val { color: var(--accent); }
+.kpi.hi .k-note { color: rgba(82,183,136,.6); }
+.kpi.wa { background: rgba(244,162,97,.07); border-color: rgba(244,162,97,.2); }
+.kpi.wa .k-lbl { color: #f4a261; }
+.kpi.wa .k-val { color: #f4a261; }
+.kpi.wa .k-note { color: rgba(244,162,97,.6); }
+
+/* ── TABS ── */
+.tab-nav { display: flex; gap: 4px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.tab-btn {
+  font-family: var(--sans); font-size: 12px; font-weight: 500; letter-spacing: .03em;
+  padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--border2); background: transparent;
+  color: var(--muted); cursor: pointer; transition: all .18s;
+}
+.tab-btn:hover { background: var(--bg3); color: var(--text); }
+.tab-btn.on { background: rgba(181,228,140,.12); color: var(--accent); border-color: rgba(181,228,140,.3); }
+
+/* ── CALLOUTS ── */
+.callout {
+  border-left: 2px solid; padding: .7rem 1rem;
+  margin-bottom: .75rem; font-size: 13px; line-height: 1.7;
+  border-radius: 0 var(--r) var(--r) 0;
+}
+.c-ok   { border-color: var(--accent2); background: rgba(82,183,136,.08); color: #a3d9b5; }
+.c-warn { border-color: var(--amber);   background: rgba(244,162,97,.08);  color: #f4c07d; }
+.c-err  { border-color: var(--red);     background: rgba(231,111,81,.08);  color: #f09b85; }
+.c-info { border-color: var(--blue);    background: rgba(116,192,252,.08); color: #9ecef7; }
+.callout strong { font-weight: 500; color: var(--text); }
+
+/* ── INCONS TABLE ── */
+.incons-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.incons-table th {
+  padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 500;
+  letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+  border-bottom: 1px solid var(--border); background: var(--bg3);
+}
+.incons-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.incons-table tr:last-child td { border-bottom: none; }
+.incons-table .orig { color: var(--red); font-family: var(--mono); font-size: 12px; }
+.incons-table .corr { color: var(--accent); font-family: var(--mono); font-size: 12px; }
+
+/* ── CENÁRIOS ── */
+.scen-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+.scen {
+  border-radius: var(--r-lg); padding: 1.25rem; border: 1px solid var(--border);
+}
+.scen.cons { background: rgba(231,111,81,.06); border-color: rgba(231,111,81,.2); }
+.scen.real { background: rgba(82,183,136,.06); border-color: rgba(82,183,136,.2); }
+.scen.opti { background: rgba(116,192,252,.06); border-color: rgba(116,192,252,.2); }
+.scen-icon { font-size: 22px; margin-bottom: .6rem; }
+.scen-title { font-family: var(--serif); font-size: 16px; font-weight: 700; margin-bottom: .9rem; }
+.scen.cons .scen-title { color: var(--red); }
+.scen.real .scen-title { color: var(--accent); }
+.scen.opti .scen-title { color: var(--blue); }
+.scen-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+.scen-row:last-child { border: none; padding-top: 8px; }
+.sk { color: var(--muted); }
+.sv { font-weight: 500; color: var(--text); font-family: var(--mono); font-size: 12px; }
+
+/* ── RISCOS ── */
+.risk-row {
+  display: grid; grid-template-columns: 1fr 80px 2fr;
+  gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--border);
+  align-items: start; font-size: 13px;
+}
+.risk-row:last-child { border-bottom: none; }
+.risk-name { font-weight: 500; color: var(--text); }
+.risk-desc { color: var(--muted); line-height: 1.5; }
+.badge {
+  display: inline-block; font-size: 11px; font-weight: 500;
+  padding: 3px 9px; border-radius: 20px; text-align: center;
+  border: 1px solid; white-space: nowrap;
+}
+.b-alto   { background: rgba(231,111,81,.12); color: var(--red);   border-color: rgba(231,111,81,.3); }
+.b-medio  { background: rgba(244,162,97,.12); color: var(--amber); border-color: rgba(244,162,97,.3); }
+.b-baixo  { background: rgba(82,183,136,.12); color: var(--accent2); border-color: rgba(82,183,136,.3); }
+
+/* ── SWOT ── */
+.swot-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+.swot-card { border-radius: var(--r-lg); padding: 1.25rem; border: 1px solid var(--border); }
+.swot-card.fo { background: rgba(82,183,136,.06); border-color: rgba(82,183,136,.2); }
+.swot-card.fr { background: rgba(244,162,97,.06); border-color: rgba(244,162,97,.2); }
+.swot-card.op { background: rgba(116,192,252,.06); border-color: rgba(116,192,252,.2); }
+.swot-card.am { background: rgba(231,111,81,.06); border-color: rgba(231,111,81,.2); }
+.swot-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; margin-bottom: .8rem;
+}
+.swot-card.fo .swot-label { color: var(--accent2); }
+.swot-card.fr .swot-label { color: var(--amber); }
+.swot-card.op .swot-label { color: var(--blue); }
+.swot-card.am .swot-label { color: var(--red); }
+.swot-item { display: flex; align-items: flex-start; gap: 7px; font-size: 13px; color: var(--muted); margin-bottom: 5px; line-height: 1.5; }
+.swot-dot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; margin-top: 7px; }
+.swot-card.fo .swot-dot { background: var(--accent2); }
+.swot-card.fr .swot-dot { background: var(--amber); }
+.swot-card.op .swot-dot { background: var(--blue); }
+.swot-card.am .swot-dot { background: var(--red); }
+
+/* ── RECS ── */
+.rec-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: .85rem 1rem; border-radius: var(--r);
+  background: rgba(116,192,252,.06); border: 1px solid rgba(116,192,252,.15);
+  margin-bottom: .6rem; font-size: 13px; color: #9ecef7; line-height: 1.65;
+}
+.rec-num {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  color: var(--blue); background: rgba(116,192,252,.12); border-radius: 4px;
+  padding: 1px 6px; flex-shrink: 0; margin-top: 2px;
+}
+
+/* ── CHART LEGEND ── */
+.chart-leg { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 1rem; font-size: 12px; color: var(--muted); }
+.leg-box { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── DIVIDER ── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+/* ── SAAS GRID 2x4 ── */
+.saas-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border); padding: 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: var(--faint); font-family: var(--mono);
+}
+
+/* ── ANIMATE ON SCROLL ── */
+.reveal {
+  opacity: 0; transform: translateY(24px);
+  transition: opacity .6s ease, transform .6s ease;
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 700px) {
+  .kpi-grid, .saas-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .scen-grid { grid-template-columns: 1fr; }
+  .swot-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+  section { padding: 4rem 1.25rem; }
+  .hero-score { flex-direction: column; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-brand">LLOGGUS · CSL Primer</span>
+  <ul class="nav-links">
+    <li><a href="#hero">Início</a></li>
+    <li><a href="#visao">Visão geral</a></li>
+    <li><a href="#financeiro">Financeiro</a></li>
+    <li><a href="#mercado">Mercado</a></li>
+    <li><a href="#riscos">Riscos</a></li>
+    <li><a href="#parecer">Parecer</a></li>
+  </ul>
+  <span class="nav-badge">Análise revisada · 2026</span>
+</nav>
+
+<main>
+
+<!-- ══ HERO ══ -->
+<section id="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-content container reveal">
+    <div class="hero-eyebrow">Plano de negócio · Análise técnica revisada</div>
+    <h1 class="hero-title">Plataforma <em>LLOGGUS</em><br>GovTech para transporte<br>escolar rural</h1>
+    <p class="hero-sub">CSL Primer Engenharia e Gestão Empresarial — modelo SaaS B2G com receita recorrente, base qualificada e diferencial regulatório. Projeções corrigidas e estrutura societária analisada.</p>
+    <div class="hero-chips">
+      <span class="chip chip-g">Receita recorrente</span>
+      <span class="chip chip-g">Carteira de 76 municípios</span>
+      <span class="chip chip-g">CAC ≈ R$500</span>
+      <span class="chip chip-a">Projeções revisadas</span>
+      <span class="chip chip-a">Risco político moderado</span>
+      <span class="chip chip-b">SaaS B2G · GovTech</span>
+    </div>
+    <div class="hero-score">
+      <div class="score-ring">
+        <svg viewBox="0 0 80 80" width="80" height="80">
+          <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="6"/>
+          <circle cx="40" cy="40" r="32" fill="none" stroke="#52b788" stroke-width="6"
+            stroke-dasharray="167 201" stroke-dashoffset="50" stroke-linecap="round"/>
+        </svg>
+        <div class="score-num"><span class="n">7,6</span><span class="d">/10</span></div>
+      </div>
+      <div class="score-info">
+        <h2>Viável com ajustes moderados</h2>
+        <p>Fundamentos sólidos, carteira qualificada e modelo recorrente. ROI corrigido (114%), churn revisado (5%) e EBITDA unificado em R$128.640.</p>
+      </div>
+    </div>
+    <div class="hero-scroll">
+      <span>SCROLL</span>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 9l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+  </div>
+</section>
+
+<!-- ══ VISÃO GERAL ══ -->
+<section id="visao" style="min-height:auto; background:var(--bg2); border-top:1px solid var(--border); border-bottom:1px solid var(--border);">
+  <div class="container">
+    <div class="sec-header reveal">
+      <div class="sec-tag">01 · Avaliação geral</div>
+      <h2 class="sec-title">Pontuação por <em>dimensão</em></h2>
+      <p class="sec-desc">Oito dimensões avaliadas de 0 a 10. Verde = pontos fortes consolidados. Âmbar = áreas que requerem atenção e ajuste.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;" class="reveal">
+      <div class="card">
+        <div class="dims" id="dims"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card-accent" style="flex:1">
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);margin-bottom:.6rem">Veredito</div>
+          <p style="font-family:var(--serif);font-size:17px;font-weight:500;line-height:1.5;color:var(--text)">Modelo com fundamentos reais: expertise de 12 anos, carteira ativa e demanda regulatória crescente.</p>
+          <p style="font-size:13px;color:var(--muted);margin-top:.75rem;line-height:1.7">As correções nas projeções e a formalização societária são os dois ajustes mais urgentes antes de escalar. Com eles, o risco de negócio cai significativamente.</p>
+        </div>
+        <div class="card" style="display:flex;gap:16px;align-items:center">
+          <div style="text-align:center;flex-shrink:0">
+            <div style="font-family:var(--serif);font-size:36px;font-weight:700;color:var(--accent);line-height:1">7,6</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">nota geral</div>
+          </div>
+          <div style="border-left:1px solid var(--border);padding-left:16px;font-size:13px;color:var(--muted);line-height:1.6">
+            Pontuação composta sobre modelo de negócio, financeiro, mercado, operação, escalabilidade e governança.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:2rem">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem" class="reveal">Indicadores financeiros corrigidos — Ano 1</div>
+      <div class="kpi-grid reveal" id="kpis"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FINANCEIRO ══ -->
+<section id="financeiro" style="min-height:auto;background:var(--bg)">
+  <div class="container">
+    <div class="sec-header reveal">
+      <div class="sec-tag">02 · Financeiro corrigido</div>
+      <h2 class="sec-title">Projeções <em>revisadas</em></h2>
+      <p class="sec-desc">Três inconsistências identificadas no plano original foram corrigidas. Os números abaixo são os valores reconciliados para uso em apresentações a investidores.</p>
+    </div>
+
+    <div class="card reveal" style="margin-bottom:1.5rem;overflow:auto">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem">3 correções aplicadas ao plano original</div>
+      <table class="incons-table" style="width:100%;min-width:600px">
+        <thead>
+          <tr>
+            <th>Item</th><th>Original</th><th>Corrigido</th><th>Impacto</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong style="color:var(--text)">ROI (Ano 1)</strong><br><span style="font-size:12px;color:var(--muted)">Retorno sobre investimento</span></td>
+            <td><span class="orig">197%</span></td>
+            <td><span class="corr">114,4%</span></td>
+            <td style="font-size:12px;color:var(--muted)">Base de cálculo incorreta no plano original. Fórmula: (128.640 − 60.000) / 60.000</td>
+          </tr>
+          <tr>
+            <td><strong style="color:var(--text)">EBITDA</strong><br><span style="font-size:12px;color:var(--muted)">Resultado operacional</span></td>
+            <td><span class="orig">R$178.240 e R$128.640</span></td>
+            <td><span class="corr">R$128.640</span></td>
+            <td style="font-size:12px;color:var(--muted)">Duas seções usavam bases de receita distintas. Valor conservador adotado como canônico.</td>
+          </tr>
+          <tr>
+            <td><strong style="color:var(--text)">Churn anual</strong><br><span style="font-size:12px;color:var(--muted)">Taxa de cancelamento</span></td>
+            <td><span class="orig">0% (irreal)</span></td>
+            <td><span class="corr">5% a.a. (realista)</span></td>
+            <td style="font-size:12px;color:var(--muted)">GovTech municipal BR: troca de prefeito e não renovação são recorrentes. MRR ajustado: R$29.640</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-bottom:1.5rem;" class="reveal">
+      <div class="chart-leg">
+        <span style="display:flex;align-items:center;gap:6px"><span class="leg-box" style="background:#52b788"></span>Recorrente</span>
+        <span style="display:flex;align-items:center;gap:6px"><span class="leg-box" style="background:#9FE1CB;opacity:.6"></span>Setup</span>
+        <span style="display:flex;align-items:center;gap:6px"><span class="leg-box" style="background:var(--red)"></span>Custo total</span>
+        <span style="display:flex;align-items:center;gap:6px;border:1px dashed var(--blue);padding:1px 8px;border-radius:4px">Break-even</span>
+      </div>
+      <div style="position:relative;width:100%;height:280px">
+        <canvas id="revChart" role="img" aria-label="Gráfico de barras empilhadas mostrando crescimento da receita de R$16.600 no mês 1 a R$45.200 no mês 12, com linha de custo total e referência de break-even">Receita cresce de R$16.600 a R$45.200 ao longo de 12 meses.</canvas>
+      </div>
+    </div>
+
+    <div class="tab-nav reveal" id="tabs1"></div>
+    <div class="card reveal" id="tab1-body" style="min-height:160px"></div>
+
+    <hr class="divider" style="margin-top:2rem">
+
+    <div style="margin-top:2rem">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem" class="reveal">Análise de sensibilidade — 3 cenários</div>
+      <div class="scen-grid reveal" id="scens"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ MERCADO & SAAS ══ -->
+<section id="mercado" style="min-height:auto;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="container">
+    <div class="sec-header reveal">
+      <div class="sec-tag">03 · Mercado & SaaS</div>
+      <h2 class="sec-title">Tamanho do mercado e<br><em>métricas recorrentes</em></h2>
+      <p class="sec-desc">TAM, SAM e SOM estimados com base na frota escolar municipal brasileira. Indicadores SaaS/GovTech calculados com churn de 5% a.a.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:2rem" class="reveal">
+      <div class="card" style="text-align:center;padding:1.5rem">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem">TAM — Mercado total</div>
+        <div style="font-family:var(--serif);font-size:32px;font-weight:700;color:var(--text);line-height:1">R$260M</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:.4rem">/ano · 5.570 municípios × 30 veíc × R$130</div>
+      </div>
+      <div class="card" style="text-align:center;padding:1.5rem;border-color:rgba(82,183,136,.3)">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);margin-bottom:.5rem">SAM — Mercado endereçável</div>
+        <div style="font-family:var(--serif);font-size:32px;font-weight:700;color:var(--accent);line-height:1">R$7M</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:.4rem">/ano · 150 municípios NE × 30 veíc × R$130</div>
+      </div>
+      <div class="card" style="text-align:center;padding:1.5rem">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem">SOM — Mercado obtível (Ano 1)</div>
+        <div style="font-family:var(--serif);font-size:32px;font-weight:700;color:var(--text);line-height:1">R$437K</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:.4rem">/ano · 14 clientes × 20 veíc × R$130 × 12</div>
+      </div>
+    </div>
+
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem" class="reveal">Indicadores SaaS / GovTech</div>
+    <div class="saas-grid reveal" id="saas-kpis"></div>
+
+    <hr class="divider">
+
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem" class="reveal">Análise SWOT</div>
+    <div class="swot-grid reveal" id="swot"></div>
+  </div>
+</section>
+
+<!-- ══ RISCOS ══ -->
+<section id="riscos" style="min-height:auto;background:var(--bg)">
+  <div class="container">
+    <div class="sec-header reveal">
+      <div class="sec-tag">04 · Riscos</div>
+      <h2 class="sec-title">Mapa de <em>riscos</em></h2>
+      <p class="sec-desc">Oito riscos identificados, classificados por nível e com indicação de mitigação. O maior risco não é financeiro — é o ciclo político-burocrático do setor público.</p>
+    </div>
+    <div class="card reveal" id="risks"></div>
+  </div>
+</section>
+
+<!-- ══ PARECER FINAL ══ -->
+<section id="parecer" style="min-height:auto;background:var(--bg2);border-top:1px solid var(--border)">
+  <div class="container">
+    <div class="sec-header reveal">
+      <div class="sec-tag">05 · Parecer final</div>
+      <h2 class="sec-title">Recomendações <em>prioritárias</em></h2>
+      <p class="sec-desc">Seis ações ordenadas por urgência e impacto. A formalização societária e a correção das projeções são pré-requisitos para captação ou expansão.</p>
+    </div>
+
+    <div class="card-accent reveal" style="margin-bottom:1.5rem">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);margin-bottom:.6rem">Parecer executivo</div>
+      <p style="font-family:var(--serif);font-size:18px;line-height:1.5;color:var(--text);font-weight:500">O negócio é <em>viável e recomendado para prosseguir</em>, com ajustes moderados nas projeções financeiras e formalização imediata da estrutura societária.</p>
+      <p style="font-size:13px;color:var(--muted);margin-top:.85rem;line-height:1.7">LTV/CAC de 100–330x, break-even no mês 7, TIR estimada de 120–150% e valuation entre R$1,5M e R$3M tornam este um dos perfis de risco-retorno mais atrativos para o segmento GovTech brasileiro em estágio inicial.</p>
+    </div>
+
+    <div class="reveal" id="recs"></div>
+
+    <div class="card reveal" style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;text-align:center">
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem">TIR estimada</div>
+        <div style="font-family:var(--serif);font-size:28px;font-weight:700;color:var(--accent)">120–150%</div>
+        <div style="font-size:11px;color:var(--muted)">acima do custo de capital GovTech (30–50%)</div>
+      </div>
+      <div style="border-left:1px solid var(--border);border-right:1px solid var(--border)">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem">Valuation</div>
+        <div style="font-family:var(--serif);font-size:28px;font-weight:700;color:var(--text)">R$1,5M–3M</div>
+        <div style="font-size:11px;color:var(--muted)">múltiplo 4–8× ARR, estágio inicial</div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem">Payback</div>
+        <div style="font-family:var(--serif);font-size:28px;font-weight:700;color:var(--text)">Mês 6–7</div>
+        <div style="font-size:11px;color:var(--muted)">cenário realista com churn 5% a.a.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <span>LLOGGUS · Análise revisada · CSL Primer Engenharia</span>
+  <span>Elaborado em 05/05/2026 · Revisão técnica completa</span>
+</footer>
+
+<script>
+const dims=[
+  {l:'Modelo de negócio',v:8.5,c:'#52b788'},
+  {l:'Mercado & concorrência',v:8.0,c:'#52b788'},
+  {l:'Estratégia comercial',v:8.0,c:'#52b788'},
+  {l:'Escalabilidade',v:8.5,c:'#52b788'},
+  {l:'Projeções financeiras',v:6.5,c:'#f4a261'},
+  {l:'Estrutura operacional',v:7.0,c:'#f4a261'},
+  {l:'Gestão de riscos',v:6.5,c:'#f4a261'},
+  {l:'Governança societária',v:6.0,c:'#f4a261'},
+];
+document.getElementById('dims').innerHTML=dims.map(d=>`
+  <div class="dim-row">
+    <span class="dim-label">${d.l}</span>
+    <div class="dim-track"><div class="dim-fill" style="width:${d.v*10}%;background:${d.c}"></div></div>
+    <span class="dim-val">${d.v.toFixed(1)}</span>
+  </div>`).join('');
+
+const kpis=[
+  {l:'Receita total Ano 1',v:'R$370.800',n:'recorrente + setup',t:''},
+  {l:'EBITDA corrigido',v:'R$128.640',n:'margem 34,7% — reconciliado',t:'hi'},
+  {l:'Break-even',v:'~135 veíc.',n:'atingido no mês 7',t:''},
+  {l:'ROI corrigido',v:'114,4%',n:'base R$60k — revisado',t:'hi'},
+  {l:'MRR mês 12',v:'R$31.200',n:'240 veículos ativos',t:''},
+  {l:'ARR projetado',v:'R$374.400',n:'com churn 5% a.a.',t:''},
+  {l:'CAC estimado',v:'R$500',n:'carteira qualificada',t:'hi'},
+  {l:'Payback',v:'Mês 6–7',n:'cenário realista',t:''},
+];
+document.getElementById('kpis').innerHTML=kpis.map(k=>`
+  <div class="kpi ${k.t}">
+    <div class="k-lbl">${k.l}</div>
+    <div class="k-val">${k.v}</div>
+    <div class="k-note">${k.n}</div>
+  </div>`).join('');
+
+const tabsData=[
+  {id:'negocio',lbl:'Modelo de negócio'},
+  {id:'mercado',lbl:'Mercado'},
+  {id:'financeiro',lbl:'Financeiro'},
+  {id:'saas',lbl:'SaaS / GovTech'},
+  {id:'societario',lbl:'Societário'},
+];
+const tabContents={
+  negocio:`
+    <div class="callout c-ok"><strong>Diferencial estratégico:</strong> Bipartição do pagamento (prefeitura + empresa terceirizada) é o maior acerto comercial. Reduz barreira de adesão, distribui custo e cria incentivo operacional em ambas as partes.</div>
+    <div class="callout c-ok"><strong>Escalabilidade real:</strong> Custos fixos de R$14.000/mês crescem muito menos que a receita. A partir do break-even (135 veículos), cada novo veículo gera R$104 de margem líquida incremental.</div>
+    <div class="callout c-warn"><strong>Churn zero — premissa inválida:</strong> Em GovTech municipal, troca de prefeito e não renovação geram churn real de 5–15% a.a. Projeções revisadas adotam 5% como base conservadora realista.</div>
+    <div class="callout c-warn"><strong>Dois modelos paralelos:</strong> Modelo 01 e projeção geral apresentam tabelas parcialmente divergentes. Recomenda-se consolidar em um único modelo financeiro antes de apresentar a investidores.</div>`,
+  mercado:`
+    <div class="callout c-ok"><strong>TAM estimado: R$260M/ano</strong> — 5.570 municípios × frota média 30 veículos × R$130/veículo/mês. Mercado amplo e com demanda regulatória crescente (Resoluções TCEPE 06/2013 e 156/2021).</div>
+    <div class="callout c-ok"><strong>SAM fase 1 (NE): R$7M/ano</strong> — 150 municípios × 30 veículos × R$130. Mercado acessível na fase inicial com a carteira pré-existente da CSL Primer.</div>
+    <div class="callout c-ok"><strong>Janela competitiva aberta:</strong> O SETE federal não faz gerenciamento contínuo. Concorrentes privados sem expressão. Janela de liderança estimada em 12–24 meses.</div>
+    <div class="callout c-warn"><strong>Concentração em PE:</strong> Carteira majoritária em Pernambuco cria risco sistêmico. Expansão para RN e CE deve ser prioritária no Ano 1, não tratada como bônus.</div>`,
+  financeiro:`
+    <div class="callout c-err"><strong>Correção 1 — ROI:</strong> Plano declarava 197%. Correto: (128.640 − 60.000) / 60.000 × 100 = <strong>114,4%</strong>. Ainda excepcional, mas a cifra original prejudica credibilidade.</div>
+    <div class="callout c-err"><strong>Correção 2 — EBITDA:</strong> Duas seções usavam bases distintas (R$432.800 e R$370.800), gerando R$178.240 e R$128.640. Valor canônico: <strong>R$128.640</strong> (base conservadora).</div>
+    <div class="callout c-err"><strong>Correção 3 — Churn:</strong> Aplicando 5% a.a.: MRR mês 12 ajustado ≈ R$29.640, ARR ≈ R$355.680, EBITDA reduzido em ≈ R$9.400. Modelo continua viável — fica mais confiável.</div>
+    <div class="callout c-info"><strong>TIR estimada: 120–150%</strong> — com fluxos crescentes e payback no mês 6–7. VPL positivo a qualquer taxa de desconto razoável. Custo de capital típico para GovTech: 30–50%.</div>
+    <div class="callout c-ok"><strong>Fluxo de caixa:</strong> Déficit apenas no mês 1 (−R$3.920). A partir do mês 2, fluxo positivo crescente. Capital de giro de R$60.000 é suficiente para cobrir o primeiro mês negativo com folga.</div>`,
+  saas:`
+    <div class="callout c-ok"><strong>LTV/CAC de 100–330×</strong> — benchmark mínimo SaaS saudável: 3×. Benchmark de excelência: 10×. O modelo supera amplamente ambos devido à carteira qualificada pré-existente.</div>
+    <div class="callout c-ok"><strong>Valuation estimado: R$1,5M–R$3M</strong> — múltiplo de 4–8× ARR (padrão GovTech). Com ARR de R$374.400 e contratos ativos, valuation é razoável e defensável para estágio inicial.</div>
+    <div class="callout c-warn"><strong>ARPA de R$2.600/mês</strong> por cliente (20 veículos). Para crescer ARR rapidamente: priorizar clientes com frotas acima de 50 veículos aumenta ARPA sem aumentar CAC proporcionalmente.</div>
+    <div class="callout c-info"><strong>Net Revenue Retention (NRR):</strong> O plano não menciona upsell. Módulos adicionais (BI, roteirização, compliance) podem elevar NRR acima de 100% — indicador-chave para múltiplos mais altos de valuation.</div>`,
+  societario:`
+    <div class="callout c-ok"><strong>Estrutura SPV aprovada:</strong> Divisão 50% Owner / 25% Weverton / 20% João / 5% reserva é adequada ao estágio e proporcional à contribuição de capital, risco e conhecimento.</div>
+    <div class="callout c-err"><strong>Urgente — acordo de sócios:</strong> Estrutura descrita narrativamente, sem documento jurídico. Qualquer contrato firmado pela SPV sem acordo de sócios vigente cria risco jurídico significativo.</div>
+    <div class="callout c-warn"><strong>Vesting obrigatório:</strong> Cláusulas devem prever cliff mínimo de 12 meses e vesting de 36–48 meses. Saída antes do cliff = sem quotas. Isso protege a Owner e o produto no longo prazo.</div>
+    <div class="callout c-info"><strong>Drag-along e tag-along:</strong> O plano menciona saída de sócios mas não prevê mecanismos de arrasto. Em eventual entrada de investidor, estas cláusulas são obrigatórias. Incluir na constituição da SPV.</div>`,
+};
+const tNav=document.getElementById('tabs1'),tBody=document.getElementById('tab1-body');
+tabsData.forEach((t,i)=>{
+  const btn=document.createElement('button');
+  btn.className='tab-btn'+(i===0?' on':'');
+  btn.textContent=t.lbl;
+  btn.onclick=()=>{
+    document.querySelectorAll('#tabs1 .tab-btn').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    tBody.innerHTML=tabContents[t.id];
+  };
+  tNav.appendChild(btn);
+});
+tBody.innerHTML=tabContents['negocio'];
+
+const months=['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12'];
+const rec=[2600,5200,7800,10400,13000,15600,18200,20800,23400,26000,28600,31200];
+const stp=[14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000];
+const cost=[17320,17840,18360,18880,19400,19920,20440,20960,21480,22000,22520,23040];
+const beVal=Array(12).fill(Math.round(14000*100/104));
+new Chart(document.getElementById('revChart'),{
+  type:'bar',
+  data:{
+    labels:months,
+    datasets:[
+      {label:'Recorrente',data:rec,backgroundColor:'#52b788',stack:'s'},
+      {label:'Setup',data:stp,backgroundColor:'rgba(159,225,203,.5)',stack:'s'},
+      {label:'Custo total',data:cost,type:'line',borderColor:'#e76f51',backgroundColor:'transparent',borderWidth:2,pointRadius:3,pointBackgroundColor:'#e76f51',tension:.3,order:0},
+      {label:'Break-even',data:beVal,type:'line',borderColor:'#74c0fc',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,5],pointRadius:0,tension:0,order:1},
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': R$ '+Math.round(ctx.parsed.y).toLocaleString('pt-BR')}}
+    },
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8a8880',font:{size:11,family:'DM Mono'},autoSkip:false,maxRotation:0}},
+      y:{ticks:{color:'#8a8880',font:{size:11,family:'DM Mono'},callback:v=>'R$'+Math.round(v/1000)+'k'},grid:{color:'rgba(255,255,255,.06)'},beginAtZero:true}
+    }
+  }
+});
+
+const scens=[
+  {cls:'cons',icon:'↘',title:'Conservador',rows:[
+    ['Crescimento/mês','10 veículos'],['Churn anual','10%'],
+    ['Receita Ano 1','≈ R$180K'],['EBITDA','≈ R$45K'],
+    ['Break-even','Mês 10–11'],['Payback','Mês 9–10'],['Viabilidade','Viável — margens apertadas'],
+  ]},
+  {cls:'real',icon:'→',title:'Realista (corrigido)',rows:[
+    ['Crescimento/mês','20 veículos'],['Churn anual','5%'],
+    ['Receita Ano 1','≈ R$370K'],['EBITDA','≈ R$128K'],
+    ['Break-even','Mês 7'],['Payback','Mês 6–7'],['Viabilidade','Altamente viável'],
+  ]},
+  {cls:'opti',icon:'↗',title:'Otimista',rows:[
+    ['Crescimento/mês','35 veículos'],['Churn anual','1–2%'],
+    ['Receita Ano 1','≈ R$590K'],['EBITDA','≈ R$220K'],
+    ['Break-even','Mês 4–5'],['Payback','Mês 4'],['Viabilidade','Excepcional'],
+  ]},
+];
+document.getElementById('scens').innerHTML=scens.map(s=>`
+  <div class="scen ${s.cls}">
+    <div class="scen-icon">${s.icon}</div>
+    <div class="scen-title">${s.title}</div>
+    ${s.rows.map(([k,v])=>`<div class="scen-row"><span class="sk">${k}</span><span class="sv">${v}</span></div>`).join('')}
+  </div>`).join('');
+
+const saasKpis=[
+  {l:'MRR final (mês 12)',v:'R$31.200',n:'base com churn 5%',t:'hi'},
+  {l:'ARR (Ano 2)',v:'R$374.400',n:'após consolidação',t:'hi'},
+  {l:'CAC por cliente',v:'R$500',n:'carteira pré-qualificada',t:'hi'},
+  {l:'LTV médio (36 meses)',v:'R$187.200',n:'por cliente — 20 veículos',t:''},
+  {l:'LTV / CAC',v:'100–330×',n:'benchmark setor: > 3×',t:'hi'},
+  {l:'ARPA mensal',v:'R$2.600',n:'por prefeitura (20 veíc)',t:''},
+  {l:'Valuation estimado',v:'R$1,5M–3M',n:'4–8× ARR, estágio inicial',t:''},
+  {l:'TIR estimada',v:'120–150%',n:'acima do custo de capital',t:'hi'},
+];
+document.getElementById('saas-kpis').innerHTML=saasKpis.map(k=>`
+  <div class="kpi ${k.t}">
+    <div class="k-lbl">${k.l}</div>
+    <div class="k-val">${k.v}</div>
+    <div class="k-note">${k.n}</div>
+  </div>`).join('');
+
+const swot=[
+  {cls:'fo',lbl:'Forças',items:['12 anos de expertise no segmento TE','Carteira ativa de 76 municípios','Conhecimento profundo do problema regulatório','CAC excepcionalmente baixo (≈ R$500)','Modelo bifurcado reduz resistência política']},
+  {cls:'fr',lbl:'Fraquezas',items:['Projeções com inconsistências (corrigidas)','Churn 0% irreal nas projeções originais','SPV e acordo de sócios não formalizados','Capacidade operacional limitada para escalar','Concentração geográfica em Pernambuco']},
+  {cls:'op',lbl:'Oportunidades',items:['Resoluções TCEPE 06/2013 e 156/2021','Expansão para RN, CE e demais estados NE','Módulos verticais: BI, IA, roteirização','Integração com rastreamento GPS/ANATEL','Contratos plurianuais para aumentar LTV']},
+  {cls:'am',lbl:'Ameaças',items:['Descontinuidade pós-eleições municipais','Empresas de rastreamento como concorrentes','Burocracia nos processos de contratação','Resistência cultural de operadores ao app','Possível iniciativa federal concorrente']},
+];
+document.getElementById('swot').innerHTML=swot.map(s=>`
+  <div class="swot-card ${s.cls}">
+    <div class="swot-label">${s.lbl}</div>
+    ${s.items.map(i=>`<div class="swot-item"><span class="swot-dot"></span><span>${i}</span></div>`).join('')}
+  </div>`).join('');
+
+const risks=[
+  {n:'Ciclo de contratação pública',lvl:'Alto',lc:'b-alto',d:'Processos podem levar 3–12 meses. Impacta diretamente as premissas de crescimento linear de 20 veículos/mês.'},
+  {n:'Descontinuidade pós-eleição',lvl:'Alto',lc:'b-alto',d:'Troca de prefeito pode cancelar contratos. Mitigação principal: contratos plurianuais e produto operacionalmente indispensável.'},
+  {n:'Concentração geográfica (PE)',lvl:'Médio',lc:'b-medio',d:'Risco sistêmico. Expansão para RN e CE deve ser prioritária no Ano 1 para diversificar a base de clientes.'},
+  {n:'Resistência operacional ao app',lvl:'Médio',lc:'b-medio',d:'Motoristas e monitores podem resistir. Mitigável com UX simplificado, treinamento presencial e suporte dedicado.'},
+  {n:'Entrada de concorrentes',lvl:'Médio',lc:'b-medio',d:'Empresas de rastreamento podem criar módulos similares. Janela de diferenciação estimada em 12–24 meses.'},
+  {n:'Dependência de devs-sócios',lvl:'Médio',lc:'b-medio',d:'Saída sem substituto impacta operação. Vesting, documentação técnica e backup de conhecimento são essenciais.'},
+  {n:'Infraestrutura cloud',lvl:'Baixo',lc:'b-baixo',d:'Custo de R$2.000/mês adequado e escalável. Fornecedores consolidados (AWS/GCP) garantem SLA contratual.'},
+  {n:'Inadimplência municipal',lvl:'Baixo',lc:'b-baixo',d:'Contratos públicos têm baixo risco de calote formal. Atrasos de pagamento são mais comuns — prever no fluxo de caixa.'},
+];
+document.getElementById('risks').innerHTML=risks.map(r=>`
+  <div class="risk-row">
+    <span class="risk-name">${r.n}</span>
+    <span class="badge ${r.lc}">${r.lvl}</span>
+    <span class="risk-desc">${r.d}</span>
+  </div>`).join('');
+
+const recs=[
+  {n:'01',txt:'Formalizar o acordo de sócios da SPV — com vesting, drag-along, tag-along e valuation para recompra — antes de qualquer contrato operacional da plataforma.'},
+  {n:'02',txt:'Consolidar as projeções em um único modelo financeiro com churn de 5–10% a.a., ROI corrigido em 114% e EBITDA canônico de R$128.640.'},
+  {n:'03',txt:'Iniciar expansão para municípios do RN e CE no Ano 1 para reduzir concentração em PE e ampliar o mercado endereçável da empresa.'},
+  {n:'04',txt:'Priorizar contratos plurianuais (2–3 anos) com cláusulas de continuidade para mitigar risco de descontinuidade pós-eleição municipal.'},
+  {n:'05',txt:'Documentar backlog técnico, arquitetura do sistema e processos de onboarding para reduzir dependência dos desenvolvedores-sócios.'},
+  {n:'06',txt:'Lançar MVP com 2–3 municípios-piloto antes da expansão acelerada para validar onboarding, suporte e adoção do app pelos operadores.'},
+];
+document.getElementById('recs').innerHTML=recs.map(r=>`
+  <div class="rec-item">
+    <span class="rec-num">${r.n}</span>
+    <span>${r.txt}</span>
+  </div>`).join('');
+
+/* ── nav active ── */
+const sections=document.querySelectorAll('section[id]');
+const navLinks=document.querySelectorAll('.nav-links a');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      navLinks.forEach(a=>a.classList.remove('active'));
+      const a=document.querySelector(`.nav-links a[href="#${e.target.id}"]`);
+      if(a)a.classList.add('active');
+    }
+  });
+},{threshold:.3});
+sections.forEach(s=>obs.observe(s));
+
+/* ── reveal on scroll ── */
+const revObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){e.target.classList.add('visible');revObs.unobserve(e.target);}
+  });
+},{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el=>revObs.observe(el));
+</script>
+</body>
+</html>
